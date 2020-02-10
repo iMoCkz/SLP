@@ -126,8 +126,7 @@ public class CentroidPath {
 		}
 	}
 	
-	private void printSuffixe(boolean isLeftSide, ArrayList<NonTerminal> sidePath, int[] weightOfSuffixes,
-			int suffixIndex) {
+	private void printSuffixe(boolean isLeftSide, ArrayList<NonTerminal> sidePath, int[] weightOfSuffixes, int suffixIndex) {
 		String suffix = "";
 		if (isLeftSide) {
 			for (int i = suffixIndex; i >= 0; i--) {

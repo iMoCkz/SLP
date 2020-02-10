@@ -34,12 +34,12 @@ public class Main {
 		
 		// Erstelle und fülle Map für Regeln zu Terminalen
 		Map<NonTerminal, String> rulesterminals = new HashMap<NonTerminal, String>();
-		rulesterminals.put(nonterminals[13], "b");
-		rulesterminals.put(nonterminals[14], "a");
+		rulesterminals.put(nonterminals[13], "a");
+		rulesterminals.put(nonterminals[14], "b");
 		
 		// Erstelle Grammatik 
-		Grammar grammatik = new Grammar(nonterminals[0], rulesnonterminals, rulesterminals, nonterminals);
-		
+		Grammar grammatik = new Grammar("G", nonterminals[0], rulesnonterminals, rulesterminals, nonterminals);
+
 		// Grammatik auflösen
 		grammatik.solveGrammar();
 		grammatik.printSolvedGrammar();
@@ -69,5 +69,10 @@ public class Main {
 		grammatik.createNewRules();
 		//
 		grammatik.createRulesFromSPConnection(); 
-	}
+		
+		Grammar slpGrammar = grammatik.SLPGrammar();
+		slpGrammar.printGrammarRules();
+		slpGrammar.solveGrammar();
+		slpGrammar.printSolvedGrammar();		
+	}	
 }

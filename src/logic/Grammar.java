@@ -3,7 +3,11 @@ package logic;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+
 
 public class Grammar {
 
@@ -14,10 +18,15 @@ public class Grammar {
 	public String grammarSolution;
 	public ArrayList<CentroidPath> centroidPaths;
 	public ArrayList<ArrayList<NonTerminal>> LeftSidesCentroidPath, RightSidesCentroidPath;
+	private Map<NonTerminal, NonTerminal[]> reducedRules;
+	private int newRulesCounter = 0;
+	private String grammarName;
+
 
 	// Konstruktor
-	public Grammar(NonTerminal startSymbol, Map<NonTerminal, NonTerminal[]> rulesNonTerminals,
+	public Grammar(String grammarName, NonTerminal startSymbol, Map<NonTerminal, NonTerminal[]> rulesNonTerminals,
 			Map<NonTerminal, String> rulesTerminals, NonTerminal[] nonTerminals) {
+		this.grammarName = grammarName;
 		this.grammarStartSymbol = startSymbol;
 		this.rulesNonTerminals = rulesNonTerminals;
 		this.rulesTerminals = rulesTerminals;
@@ -33,8 +42,13 @@ public class Grammar {
 		centroidPaths = new ArrayList<CentroidPath>();
 		LeftSidesCentroidPath = new ArrayList<ArrayList<NonTerminal>>();
 		RightSidesCentroidPath = new ArrayList<ArrayList<NonTerminal>>();
+		reducedRules = new HashMap<NonTerminal, NonTerminal[]>();
 	}
 
+	public Map<NonTerminal, NonTerminal[]> getReducedRules() {
+		return reducedRules;
+	}
+	
 	public void solveGrammar() {
 		grammarSolution = solveGrammarRecursively(grammarStartSymbol);
 	}
@@ -124,7 +138,7 @@ public class Grammar {
 
 	// Grammatik berechnen
 	public void printSolvedGrammar() {
-		System.out.println(String.format("Solved grammar: %s\n", grammarSolution));
+		System.out.println(String.format("Solved grammar %s: %s\n", grammarName, grammarSolution));
 	}
 
 	// Berechnete Paare ausgeben
@@ -264,56 +278,121 @@ public class Grammar {
 	
 	public void createNewRules() {
 		for (CentroidPath centroidPath : centroidPaths) {
-			centroidPath.abc();			
+			centroidPath.abc();	
+			System.out.println();
 		}
 	}
 	
 	public void createRulesFromSPConnection() {
 		for (CentroidPath centroidPath : centroidPaths) {
-			//
+			// Center Non Terminal
 			NonTerminal centerNonTerminal = centroidPath.getPath().get(centroidPath.getPath().size() - 1);
-			//
+			// S-Rules
+			ArrayList<NonTerminal[]> SRules = new ArrayList<NonTerminal[]>();
 			ArrayList<NonTerminal> leftSides = centroidPath.getLeftSideElements().getElements();
 			for (int centroidElementIndex = 0; centroidElementIndex < centroidPath.size(); centroidElementIndex++) {
 				NonTerminal[] leftRightElements = rulesNonTerminals.get(centroidPath.getPath().get(centroidElementIndex));
-				// S
+				int i = 0;
+				for (NonTerminal[] nonTerminals : centroidPath.getLeftSideElements().getNewRules_S().values()) {
+					if (Arrays.deepEquals(leftSides.toArray(NonTerminal[]::new), nonTerminals)) {
+						SRules.add(nonTerminals);
+//						System.out.println(String.format("S%s", ++i));
+						break;
+					} else {
+						i++;
+					}
+				}	
+				// Entferne Element, wenn 
 				if (leftSides.contains(leftRightElements[0])) {
 					leftSides.remove(leftRightElements[0]);
 				}
-				
-				int i = 0;
-				for (NonTerminal[] syms : centroidPath.getLeftSideElements().getNewRules_S().values()) {
-					if (Arrays.deepEquals(leftSides.toArray(NonTerminal[]::new), syms)) {
-						System.out.println(String.format("S%s", ++i));
-						break;
-					} else {
-						i++;
-					}
-				}		
-				System.out.println();
 			}
-			
+			// P-Rules	
+			ArrayList<NonTerminal[]> PRules = new ArrayList<NonTerminal[]>();
 			ArrayList<NonTerminal> rightSides = centroidPath.getRightSideElements().getElements();
+			Collections.reverse(rightSides);
 			for (int centroidElementIndex = 0; centroidElementIndex < centroidPath.size(); centroidElementIndex++) {
 				NonTerminal[] leftRightElements = rulesNonTerminals.get(centroidPath.getPath().get(centroidElementIndex));
-				// P
-				if (rightSides.contains(leftRightElements[1])) {
-					System.out.println(String.format("%s %s", leftRightElements[0].getId(),leftRightElements[1].getId()));
-					rightSides.remove(leftRightElements[1]);
-				}
-				
 				int i = 0;
-				for (NonTerminal[] syms : centroidPath.getRightSideElements().getNewRules_P().values()) {
-					if (Arrays.deepEquals(rightSides.toArray(NonTerminal[]::new), syms)) {
-						System.out.println(String.format("P%s", ++i));
+				for (NonTerminal[] nonTerminals : centroidPath.getRightSideElements().getNewRules_P().values()) {
+					if (Arrays.deepEquals(rightSides.toArray(NonTerminal[]::new), nonTerminals)) {
+						PRules.add(nonTerminals);
+//						System.out.println(String.format("P%s", ++i));
 						break;
 					} else {
 						i++;
 					}
-				}				
+				}	
+				
+				if (rightSides.contains(leftRightElements[1])) {
+					rightSides.remove(leftRightElements[1]);
+				}
 			}
-			
+			createRules(SRules, PRules, centerNonTerminal);			
+			System.out.println();
 		}
+		addRulesBeyondCentroidPath();
+	}
+	
+	private void createRules(ArrayList<NonTerminal[]> SRules, ArrayList<NonTerminal[]> PRules, NonTerminal centerNonTerminal) {
+		int maxSOrPRulesSize = Math.max(SRules.size(), PRules.size());
+		for (int spRulesIndex = 0; spRulesIndex < maxSOrPRulesSize; spRulesIndex++) {
+			ArrayList<NonTerminal> newCompleteRule = new ArrayList<NonTerminal>();
+			// S-Rules
+			if (spRulesIndex < SRules.size()) {
+				newCompleteRule.addAll(new ArrayList<>(Arrays.asList(SRules.get(spRulesIndex))));
+			}
+			// Last element from centroid
+			newCompleteRule.add(centerNonTerminal);
+			// P-Rules
+			if (spRulesIndex < PRules.size()) {
+				newCompleteRule.addAll(new ArrayList<>(Arrays.asList(PRules.get(spRulesIndex))));
+			}
+			printNonTerminalArrays(newRulesCounter, newCompleteRule);
+			reducedRules.put(new NonTerminal(newRulesCounter++), newCompleteRule.toArray(NonTerminal[]::new));
+		}
+		reducedRules.put(centerNonTerminal, rulesNonTerminals.get(centerNonTerminal));		
+	}
+	
+	private void addRulesBeyondCentroidPath() {
+		for (NonTerminal nonTerminal : nonTerminals) {
+			if (!containedInCentroid(nonTerminal) && rulesNonTerminals.keySet().contains(nonTerminal)) {
+				reducedRules.put(nonTerminal, rulesNonTerminals.get(nonTerminal));
+			}
+		}
+	}
+	
+	public Grammar SLPGrammar() {	
+		// NonTerminalRules
+		Set<NonTerminal> nonTsSet = reducedRules.keySet();
+		NonTerminal[] nonTs = nonTsSet.toArray(new NonTerminal[nonTsSet.size()]);
+		// TerminalRules
+		Set<NonTerminal> TsSet = rulesTerminals.keySet();
+		NonTerminal[] Ts = TsSet.toArray(new NonTerminal[TsSet.size()]);
+		// Concatenate to obtain all terminal symbols
+		NonTerminal[] allTerminals = extendNonTerminals(nonTs, Ts);
+		// Sort terminals by id
+		Arrays.sort(allTerminals, Comparator.comparing(NonTerminal::getId));
+
+		return new Grammar("H", allTerminals[0], reducedRules, rulesTerminals, allTerminals);
+	}
+	
+	private NonTerminal[] extendNonTerminals(NonTerminal[] currentNonTs, NonTerminal[] currentTs) {
+		NonTerminal[] completeArray = new NonTerminal[currentNonTs.length + currentTs.length];
+		int terminalCounter = 0;
+		for (int i = 0; i < completeArray.length; i++) {			
+			completeArray[i] = i < currentNonTs.length ? currentNonTs[i] :  currentTs[terminalCounter++];
+		}
+		return completeArray;
+	}
+	
+	private boolean containedInCentroid(NonTerminal nonTerminal) {
+		for (CentroidPath centroid : centroidPaths) {
+			if (centroid.getPath().contains(nonTerminal)) {
+				return true;
+			}
+		}		
+		return false;
 	}
 	
 	private void ausgabe(ArrayList<NonTerminal> test) {
@@ -324,4 +403,37 @@ public class Grammar {
 		System.out.println(bla);
 	}
 	
+	public static void printNonTerminalArrays(int ruleNr, ArrayList<NonTerminal> nonTs) {
+		String rule = "";
+		for (int i = 0; i < nonTs.size(); i++) {
+			rule += String.format("x%s ", nonTs.get(i).getId());
+		}
+		System.out.println(String.format("x%s -> %s", ruleNr, rule));
+	}
+
+	public void printNonterminals() {
+		for (NonTerminal nT : nonTerminals) {
+			System.out.println(nT.getId());
+		}
+	}
+	
+	public void printGrammarRules() {
+		System.out.println(String.format("Grammar %s's rules are:", grammarName));
+		for (NonTerminal nT : nonTerminals) {
+			if (rulesNonTerminals.containsKey(nT)) {
+				NonTerminal[] nTs = rulesNonTerminals.get(nT);
+				String rule = String.format("x%s -> ", nT.getId());			
+				for (int i = 0; i < nTs.length; i++) {
+					rule += String.format("x%s ", nTs[i].getId());
+				}
+				System.out.println(rule);
+			}			
+		}
+		for (NonTerminal nT : nonTerminals) {
+			if (rulesTerminals.containsKey(nT)) {
+				System.out.println(String.format("x%s -> %s", nT.getId(), rulesTerminals.get(nT)));
+			}
+		}
+		System.out.println();
+	}
 }
