@@ -9,16 +9,10 @@ public class CentroidPath {
 	private ArrayList<NonTerminal> path;
 	private CentroidSideElements leftSideElements, rightSideElements;
 	
-	public CentroidPath() {
+	public CentroidPath(int grammarSize) {
 		path = new ArrayList<NonTerminal>();
-		leftSideElements = new CentroidSideElements(true);
-		rightSideElements = new CentroidSideElements(false);
-	}
-	
-	public CentroidPath(ArrayList<NonTerminal> path) {
-		this.path = path;
-		leftSideElements = new CentroidSideElements(true);
-		rightSideElements = new CentroidSideElements(false);	
+		leftSideElements = new CentroidSideElements(grammarSize, true);
+		rightSideElements = new CentroidSideElements(grammarSize, false);
 	}
 
 	public ArrayList<NonTerminal> getPath() {
@@ -73,13 +67,13 @@ public class CentroidPath {
 	public void printSideElements() {
 		// left side
 		String leftString = String.format("L%s: ", centroidID + 1);
-		for (NonTerminal leftSide : leftSideElements.getSideElements()) {
+		for (NonTerminal leftSide : leftSideElements.getElements()) {
 			leftString += String.format("x%s ", leftSide.getId());
 		}
 		System.out.println(leftString);
 		// right side
 		String rightString = String.format("R%s: ", centroidID + 1);
-		for (NonTerminal rightSide : rightSideElements.getSideElements()) {
+		for (NonTerminal rightSide : rightSideElements.getElements()) {
 			rightString += String.format("x%s ", rightSide.getId());
 		}
 		System.out.println(rightString);
@@ -89,17 +83,18 @@ public class CentroidPath {
 	
 	public void determineSeperation() {
 		cutToShape(leftSideElements);
+		Collections.reverse(rightSideElements.getElements());
 		cutToShape(rightSideElements);	
 		System.out.println();
 	}
 	
-//	public void createNewRules() {
-//		leftSideElements.createNewRules();
-//		rightSideElements.createNewRules();	
-//	}
+	public void abc() {
+		leftSideElements.createNewSPRules();
+		rightSideElements.createNewSPRules();
+	}
 	
 	private void cutToShape(CentroidSideElements sideElements) {
-		ArrayList<NonTerminal> sidePath = sideElements.getSideElements();
+		ArrayList<NonTerminal> sidePath = sideElements.getElements();
 		// Drehe Liste, wenn es sich um linksseitigen Pfad handelt.
 		Collections.reverse(sidePath);
 		// Berechne Gewicht der Suffixe

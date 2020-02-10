@@ -158,7 +158,7 @@ public class Grammar {
 		// Liste der Variablen durchgehen
 		while (nonVisitedSymbols.size() > 0) {
 			// Centroidpfad ist eine Liste von Nichtterminalen
-			CentroidPath possibleCentroidPath = new CentroidPath();
+			CentroidPath possibleCentroidPath = new CentroidPath(nonTerminals.length);
 			NonTerminal topSymbol = nonVisitedSymbols.get(0);
 			possibleCentroidPath.add(topSymbol);
 			// Rekursive Suche der Centroidpfade
@@ -262,10 +262,66 @@ public class Grammar {
 		}
 	}
 	
-//	public void createNewRules() {
-//		for (CentroidPath centroidPath : centroidPaths) {
-//			centroidPath.createNewRules();		
-//		}
-//	}
+	public void createNewRules() {
+		for (CentroidPath centroidPath : centroidPaths) {
+			centroidPath.abc();			
+		}
+	}
+	
+	public void createRulesFromSPConnection() {
+		for (CentroidPath centroidPath : centroidPaths) {
+			//
+			NonTerminal centerNonTerminal = centroidPath.getPath().get(centroidPath.getPath().size() - 1);
+			//
+			ArrayList<NonTerminal> leftSides = centroidPath.getLeftSideElements().getElements();
+			for (int centroidElementIndex = 0; centroidElementIndex < centroidPath.size(); centroidElementIndex++) {
+				NonTerminal[] leftRightElements = rulesNonTerminals.get(centroidPath.getPath().get(centroidElementIndex));
+				// S
+				if (leftSides.contains(leftRightElements[0])) {
+					leftSides.remove(leftRightElements[0]);
+				}
+				
+				int i = 0;
+				for (NonTerminal[] syms : centroidPath.getLeftSideElements().getNewRules_S().values()) {
+					if (Arrays.deepEquals(leftSides.toArray(NonTerminal[]::new), syms)) {
+						System.out.println(String.format("S%s", ++i));
+						break;
+					} else {
+						i++;
+					}
+				}		
+				System.out.println();
+			}
+			
+			ArrayList<NonTerminal> rightSides = centroidPath.getRightSideElements().getElements();
+			for (int centroidElementIndex = 0; centroidElementIndex < centroidPath.size(); centroidElementIndex++) {
+				NonTerminal[] leftRightElements = rulesNonTerminals.get(centroidPath.getPath().get(centroidElementIndex));
+				// P
+				if (rightSides.contains(leftRightElements[1])) {
+					System.out.println(String.format("%s %s", leftRightElements[0].getId(),leftRightElements[1].getId()));
+					rightSides.remove(leftRightElements[1]);
+				}
+				
+				int i = 0;
+				for (NonTerminal[] syms : centroidPath.getRightSideElements().getNewRules_P().values()) {
+					if (Arrays.deepEquals(rightSides.toArray(NonTerminal[]::new), syms)) {
+						System.out.println(String.format("P%s", ++i));
+						break;
+					} else {
+						i++;
+					}
+				}				
+			}
+			
+		}
+	}
+	
+	private void ausgabe(ArrayList<NonTerminal> test) {
+		String bla = "";
+		for (NonTerminal sym : test) {
+			bla += sym.getId() + " ";
+		}
+		System.out.println(bla);
+	}
 	
 }

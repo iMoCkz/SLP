@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class CentroidSideElements {
@@ -13,15 +14,31 @@ public class CentroidSideElements {
 	private ArrayList<NonTerminal> a_k;
 	private boolean isLeftPath;
 	private int newRulesId;
-	Map<NonTerminal, NonTerminal[]> newRules_a;
-	Map<NonTerminal, NonTerminal[]> newRules_b;
+	private Map<NonTerminal, NonTerminal[]> newRules_a;
+	private Map<NonTerminal, NonTerminal[]> newRules_b;
+	private int grammarSize;
+	private static int SRuleNr = 1;
+	private static int PRuleNr = 1;
+	private LinkedHashMap<NonTerminal, NonTerminal[]> newRules_S;	
+	private LinkedHashMap<NonTerminal, NonTerminal[]> newRules_P;
 
-	public CentroidSideElements(boolean isLeftPath) {
+	public CentroidSideElements(int grammarSize, boolean isLeftPath) {
+		this.grammarSize = grammarSize;
 		this.isLeftPath = isLeftPath;
-		this.newRules_a = new HashMap<NonTerminal, NonTerminal[]>();
-		this.newRules_b = new HashMap<NonTerminal, NonTerminal[]>();
+		this.newRules_a = new LinkedHashMap<NonTerminal, NonTerminal[]>();
+		this.newRules_b = new LinkedHashMap<NonTerminal, NonTerminal[]>();
+		this.newRules_S = new LinkedHashMap<NonTerminal, NonTerminal[]>();
+		this.newRules_P = new LinkedHashMap<NonTerminal, NonTerminal[]>();
 	}
 
+	public LinkedHashMap<NonTerminal, NonTerminal[]> getNewRules_S() {
+		return newRules_S;
+	}
+
+	public LinkedHashMap<NonTerminal, NonTerminal[]> getNewRules_P() {
+		return newRules_P;
+	}
+	
 	public void addSideElements(ArrayList<NonTerminal> sideElements) {
 		this.sideElements = sideElements;
 	}
@@ -30,7 +47,7 @@ public class CentroidSideElements {
 		return sideElements.size();
 	}
 
-	public ArrayList<NonTerminal> getSideElements() {
+	public ArrayList<NonTerminal> getElements() {
 		return sideElements;
 	}
 
@@ -44,8 +61,8 @@ public class CentroidSideElements {
 				this.a_k.add(symbol);
 			}
 		}
-		if (this.isLeftPath)
-			Collections.reverse(this.a_k);
+//		if (this.isLeftPath)
+		Collections.reverse(this.a_k);
 	}
 
 	public void printAufteilung() {
@@ -94,11 +111,37 @@ public class CentroidSideElements {
 			if (i == 0) {
 				rules.add(0, this.c);
 				newRules_b.put(new NonTerminal(newRulesId), rules.toArray(NonTerminal[]::new));
-//						ausgabe(rules);
+//				ausgabe(rules);
 			}
 		}
 	}
 
+	public void createNewSPRules() {	
+		Collections.reverse(sideElements);
+
+		for (int i = 0; i < sideElements.size(); i++) {
+			String test = "";
+			ArrayList<NonTerminal> rules = new ArrayList<NonTerminal>();
+			if (isLeftPath) {
+				test = String.format("S%s -> ", SRuleNr++);
+				for (int j = i; j < sideElements.size(); j++){
+					rules.add(sideElements.get(j));
+					test += String.format("x%s ", sideElements.get(j).getId());
+				}
+				newRules_S.put(new NonTerminal(newRulesId), rules.toArray(NonTerminal[]::new));
+
+			} else {
+				test = String.format("P%s -> ", PRuleNr++);
+				for (int j = sideElements.size() - 1; j >= i; j--){
+					rules.add(sideElements.get(j));
+					test += String.format("x%s ", sideElements.get(j).getId());
+				}
+				newRules_P.put(new NonTerminal(newRulesId), rules.toArray(NonTerminal[]::new));
+			}					
+			System.out.println(test);
+		}
+	}
+	
 	private void ausgabe() {
 		for (NonTerminal symbol : newRules_b.keySet()) {
 			System.out.println(symbol.getId());
@@ -120,4 +163,6 @@ public class CentroidSideElements {
 		for (NonTerminal key : this.newRules_a.keySet())
 			System.out.println(key.getId());
 	}
+
+	
 }

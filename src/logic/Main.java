@@ -66,6 +66,8 @@ public class Main {
 		//
 		grammatik.determineSeperation();
 		//
-//		grammatik.createNewRules();
+		grammatik.createNewRules();
+		//
+		grammatik.createRulesFromSPConnection(); 
 	}
 }
